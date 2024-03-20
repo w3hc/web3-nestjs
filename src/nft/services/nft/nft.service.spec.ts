@@ -3,12 +3,14 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NftService } from './nft.service';
 import { Repository } from 'typeorm';
 import { Nft } from '../../../typeorm';
+import { DeployNftDto } from './dtos/deployNft.dtos';
 
 const mockRepository = {
   create: jest.fn(),
   save: jest.fn(),
   find: jest.fn(),
   findOne: jest.fn(),
+  searchNftByMetadata: jest.fn(),
 };
 
 describe('NftService', () => {
@@ -34,10 +36,16 @@ describe('NftService', () => {
     it('should create and save a new Nft', async () => {
       const mockDeployNftDto: DeployNftDto = {
         network: 11155111,
-        recipient: '0x27292E1a901E3E0bE7d144aDba4CAD07da2d8a42',
-        tokenUri:
-          'https://bafkreidrrwa6eckvudnokxsttfayckjvilqpote6xn3fc5beler76py57u.ipfs.w3s.link/',
-        resaleRights: 400,
+        recipient: '0x3e50D7fAF96B4294367cC3563B55CBD02bB4cE4d',
+        name: 'yo',
+        description: 'yo',
+        creatorName: 'yo',
+        creatorAddress: '0x000000000000000000000000000000000default',
+        imageUrl:
+          'https://bafybeiakz6ddls5hrcgrcpse3ofuqxx3octuedtapyxnstktyoadtwjjqi.ipfs.w3s.link/',
+        resaleRights: 800,
+        symbol: 'MYNFT',
+        redeemable: false,
       };
 
       const mockCreatedNft: Nft = {
@@ -45,12 +53,11 @@ describe('NftService', () => {
         network: 11155111,
         contractAddress: '',
         tokenId: 1,
+        metadata: 'hello',
       };
 
       jest.spyOn(repository, 'create').mockReturnValue(mockCreatedNft);
       jest.spyOn(repository, 'save').mockResolvedValue(mockCreatedNft);
-
-      // The createNft method has changed, so this test is no longer relevant
 
       const result = await service.createNft(mockDeployNftDto);
 
