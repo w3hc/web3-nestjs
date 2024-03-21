@@ -4,10 +4,10 @@ import {
   ExecutionContext,
   CallHandler,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, throwError, tap } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { tap } from 'rxjs/operators';
 import { ethers } from 'ethers';
 import * as nftContract from './NFT.json';
 import { NFTStorage, File } from 'nft.storage';
@@ -44,13 +44,21 @@ export class MintInterceptor implements NestInterceptor {
         creatorName,
       } = request.body;
 
-      // TODO: check if there's enough funds on the main wallet
-
       const provider = new ethers.JsonRpcProvider(
         'https://ethereum-sepolia.publicnode.com',
       );
       const pKey = process.env.SIGNER_PRIVATE_KEY;
       const specialSigner = new ethers.Wallet(pKey as string, provider);
+
+      const signerCurrentBalance = ethers.formatEther(
+        String(await provider.getBalance(specialSigner.address)),
+      );
+      console.log('signerCurrentBalance:', signerCurrentBalance);
+
+      if (Number(signerCurrentBalance) < 2) {
+        console.log('Issuer balance inferior to 0.1 ETH');
+        throw new Error('Insufficient balance');
+      }
 
       ///// Deployment /////
 
@@ -90,7 +98,7 @@ export class MintInterceptor implements NestInterceptor {
           return file;
         } catch (error) {
           console.error('Error downloading image:', error.message);
-          throw error;
+          throw new Error('Error downloading image');
         }
       }
 
@@ -166,7 +174,7 @@ export class MintInterceptor implements NestInterceptor {
             }
           } catch (error) {
             console.error('Error:', error);
-            throw error;
+            throw new Error('Error saving metadata');
           }
 
           const modifiedData = {
@@ -187,7 +195,10 @@ export class MintInterceptor implements NestInterceptor {
         }),
         catchError((error) => {
           console.error('Error occurred:', error);
-          throw new InternalServerErrorException('Something went wrong');
+          return throwError(
+            () =>
+              new InternalServerErrorException('Something went wrong', error),
+          );
         }),
         tap(() => {
           const elapsedTimeInSeconds = (Date.now() - now) / 1000;
@@ -197,7 +208,25 @@ export class MintInterceptor implements NestInterceptor {
         }),
       );
     } catch (error) {
-      console.error('Error occurred:', error);
+      switch (error.message) {
+        case 'Insufficient balance':
+          return throwError(
+            () =>
+              new BadRequestException(
+                'Insufficient balance: please transfer some ETH to 0x3e50D7fAF96B4294367cC3563B55CBD02bB4cE4d',
+              ),
+          );
+        case 'Error downloading image':
+          return throwError(
+            () => new BadRequestException('Error downloading image'),
+          );
+        case 'Error saving metadata':
+          return throwError(
+            () => new InternalServerErrorException('Error saving metadata'),
+          );
+        default:
+          throw new InternalServerErrorException('Something went wrong');
+      }
     }
   }
 }
