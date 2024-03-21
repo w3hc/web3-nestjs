@@ -55,7 +55,7 @@ export class MintInterceptor implements NestInterceptor {
       );
       console.log('signerCurrentBalance:', signerCurrentBalance);
 
-      if (Number(signerCurrentBalance) < 2) {
+      if (Number(signerCurrentBalance) < 0.1) {
         console.log('Issuer balance inferior to 0.1 ETH');
         throw new Error('Insufficient balance');
       }
