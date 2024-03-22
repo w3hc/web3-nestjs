@@ -11,13 +11,13 @@ export class Nft {
   @Column({
     name: 'network',
     nullable: false,
-    default: 11155111,
+    default: 11155420,
   })
   network: number;
 
   @Column({
     name: 'contractAddress',
-    nullable: false,
+    nullable: true,
     default: '0x000000000000000000000000000000000default',
   })
   contractAddress: string;

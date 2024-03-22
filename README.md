@@ -60,7 +60,7 @@ You can access the Swagger UI at [`http://localhost:3000/api`](http://localhost:
 
 ```json
 {
-  "network": 11155111,
+  "network": 11155420,
   "recipient": "0x3e50D7fAF96B4294367cC3563B55CBD02bB4cE4d",
   "name": "My NFT",
   "description": "This is description.",
@@ -77,9 +77,9 @@ You can access the Swagger UI at [`http://localhost:3000/api`](http://localhost:
 
 ```json
 {
-  "network": 11155111,
+  "network": 11155420,
   "tokenId": 1,
-  "contract": "0xDDff341dc57260db78F96bBC7dc0c7Aa0Ad4fb67",
+  "contract": "0x5f735C3d7e69345322C29A62B730eF6b259C9bBb",
   "metadata": {
     "name": "My NFT",
     "description": "This is description.",
@@ -101,10 +101,8 @@ You can access the Swagger UI at [`http://localhost:3000/api`](http://localhost:
       }
     ]
   },
-  "id": "19",
-  "contractAddress": "0x000000000000000000000000000000000default",
-  "mintHash": "https://sepolia.etherscan.io/tx/0x32bdb2af0f26eec625413f998c1e6766e80db4ce7b6a51de619328d9c0b5f81c",
-  "openseaLink": "https://testnets.opensea.io/assets/sepolia/0xDDff341dc57260db78F96bBC7dc0c7Aa0Ad4fb67/1",
+  "id": "28",
+  "etherscanLink": "https://sepolia-optimism.etherscan.io/token/0x5f735C3d7e69345322C29A62B730eF6b259C9bBb?a=1",
   "metadataUrl": "ipfs://bafkreiecdhtpydti7k3klndxfmgfn4hz6xjsdk7fgafcclgg3yhhrusqmy"
 }
 ```
