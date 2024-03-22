@@ -1,10 +1,10 @@
 # Web3 Nestjs
 
-Nestjs-based API that uses PostgreSQL and Ethersjs.
+[Nestjs](https://nestjs.com/)-based API that uses [PostgreSQL](https://www.postgresql.org/) and [Ethersjs](https://docs.ethers.org/).
 
 It mints an NFT. 
 
-Standard NFT contract: https://github.com/strat-web3/standard-nft-contracts 
+Unique NFT contract: https://github.com/strat-web3/standard-nft-contracts/blob/unique/contracts/NFT.sol
 
 ## Install
 
