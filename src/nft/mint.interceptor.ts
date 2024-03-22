@@ -53,10 +53,10 @@ export class MintInterceptor implements NestInterceptor {
       const signerCurrentBalance = ethers.formatEther(
         String(await provider.getBalance(specialSigner.address)),
       );
-      console.log('signerCurrentBalance:', signerCurrentBalance);
+      console.log('\nsignerCurrentBalance:', signerCurrentBalance);
 
       if (Number(signerCurrentBalance) < 0.001) {
-        console.log('Issuer balance inferior to 0.1 ETH');
+        console.log('Issuer balance inferior to 0.001 ETH');
         throw new Error('Insufficient balance');
       }
 
@@ -151,14 +151,10 @@ export class MintInterceptor implements NestInterceptor {
           '#code',
       );
 
-      console.log('receipt:', receipt);
+      // console.log('receipt:', receipt);
 
       const signerBalanceAfterDeployment = ethers.formatEther(
         String(await provider.getBalance(specialSigner.address)),
-      );
-      console.log(
-        'signerBalanceAfterDeployment:',
-        signerBalanceAfterDeployment,
       );
 
       return next.handle().pipe(
@@ -206,11 +202,11 @@ export class MintInterceptor implements NestInterceptor {
         tap(() => {
           const elapsedTimeInSeconds = (Date.now() - now) / 1000;
           const deploymentCost =
-            Number(signerBalanceAfterDeployment) - Number(signerCurrentBalance);
+            Number(signerCurrentBalance) - Number(signerBalanceAfterDeployment);
+          console.log(`\nDeployment cost = ${deploymentCost} ETH`);
           console.log(
             `\n///// Create done (took ${elapsedTimeInSeconds} seconds) /////\n`,
           );
-          console.log(`\nDeployment cost = ${deploymentCost} ETH\n`);
         }),
       );
     } catch (error) {
