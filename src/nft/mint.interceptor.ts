@@ -45,7 +45,7 @@ export class MintInterceptor implements NestInterceptor {
       } = request.body;
 
       const provider = new ethers.JsonRpcProvider(
-        'https://ethereum-sepolia.publicnode.com',
+        'https://sepolia.optimism.io',
       );
       const pKey = process.env.SIGNER_PRIVATE_KEY;
       const specialSigner = new ethers.Wallet(pKey as string, provider);
@@ -55,33 +55,10 @@ export class MintInterceptor implements NestInterceptor {
       );
       console.log('signerCurrentBalance:', signerCurrentBalance);
 
-      if (Number(signerCurrentBalance) < 0.1) {
+      if (Number(signerCurrentBalance) < 0.001) {
         console.log('Issuer balance inferior to 0.1 ETH');
         throw new Error('Insufficient balance');
       }
-
-      ///// Deployment /////
-
-      const abi = nftContract.abi;
-      const bytecode = nftContract.bytecode;
-      const contractFactory = new ethers.ContractFactory(
-        abi,
-        bytecode,
-        specialSigner,
-      );
-      const deployTx = await contractFactory.deploy(
-        specialSigner.address,
-        name,
-        symbol,
-        resaleRights,
-      );
-      const receipt = await deployTx.waitForDeployment();
-      const contractAddress = receipt.target;
-      console.log(
-        '\ndeploy ✅ https://sepolia.etherscan.io/address/' +
-          contractAddress +
-          '#code',
-      );
 
       ///// NFT metadata construction /////
 
@@ -110,7 +87,6 @@ export class MintInterceptor implements NestInterceptor {
         type: 'image/png',
       });
       const nftImageCid = await client.storeBlob(imageFile);
-      // console.log('nftImageCid:', nftImageCid);
 
       const resaleRightsFormatted = resaleRights / 100;
 
@@ -143,18 +119,46 @@ export class MintInterceptor implements NestInterceptor {
       const metadataCid = await client.storeBlob(metadataBlob);
       const uri = 'ipfs://' + metadataCid;
 
-      ///// Mint /////
+      ///// Deployment /////
 
-      const nft = new ethers.Contract(
-        contractAddress as string,
+      const abi = nftContract.abi;
+      const bytecode = nftContract.bytecode;
+      const contractFactory = new ethers.ContractFactory(
         abi,
+        bytecode,
         specialSigner,
       );
-      const mint = await nft.safeMint(recipient, uri);
-      const mintReceipt = await mint.wait();
+      let deployTx;
+      try {
+        deployTx = await contractFactory.deploy(
+          name,
+          symbol,
+          uri,
+          recipient,
+          resaleRights,
+          recipient,
+        );
+      } catch (e) {
+        console.log('error:', e);
+        throw new Error('Insufficient balance');
+      }
+      // console.log('deployTx:', deployTx);
+      const receipt = await deployTx.waitForDeployment();
+      const contractAddress = receipt.target;
       console.log(
-        '\nmint ✅ https://sepolia.etherscan.io/tx/' + mintReceipt.hash,
-        '\n',
+        '\ndeploy ✅ https://sepolia-optimism.etherscan.io/address/' +
+          contractAddress +
+          '#code',
+      );
+
+      console.log('receipt:', receipt);
+
+      const signerBalanceAfterDeployment = ethers.formatEther(
+        String(await provider.getBalance(specialSigner.address)),
+      );
+      console.log(
+        'signerBalanceAfterDeployment:',
+        signerBalanceAfterDeployment,
       );
 
       return next.handle().pipe(
@@ -176,21 +180,20 @@ export class MintInterceptor implements NestInterceptor {
             console.error('Error:', error);
             throw new Error('Error saving metadata');
           }
-
           const modifiedData = {
             network: network,
             tokenId: data.tokenId,
             contract: String(contractAddress),
             ...data,
-            mintHash: 'https://sepolia.etherscan.io/tx/' + mintReceipt.hash,
-            openseaLink:
-              'https://testnets.opensea.io/assets/sepolia/' +
-              contractAddress +
-              '/' +
+            etherscanLink:
+              'https://sepolia-optimism.etherscan.io/token/' +
+              String(contractAddress) +
+              '?a=' +
               1,
             metadataUrl: uri,
             metadata: metadata,
           };
+          delete modifiedData.contractAddress;
           return modifiedData;
         }),
         catchError((error) => {
@@ -202,9 +205,12 @@ export class MintInterceptor implements NestInterceptor {
         }),
         tap(() => {
           const elapsedTimeInSeconds = (Date.now() - now) / 1000;
+          const deploymentCost =
+            Number(signerBalanceAfterDeployment) - Number(signerCurrentBalance);
           console.log(
             `\n///// Create done (took ${elapsedTimeInSeconds} seconds) /////\n`,
           );
+          console.log(`\nDeployment cost = ${deploymentCost} ETH\n`);
         }),
       );
     } catch (error) {

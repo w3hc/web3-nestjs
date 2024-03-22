@@ -4,13 +4,13 @@ import { ApiProperty } from '@nestjs/swagger';
 export class DeployNftDto {
   @ApiProperty({
     description: 'Network on wich the NFT currrently is',
-    example: 11155111,
+    example: 11155420,
   })
   @IsNotEmpty()
   network: number;
 
   @ApiProperty({
-    description: 'Recipient of the safeMint tx',
+    description: 'Recipient of the NFT',
     example: '0x3e50D7fAF96B4294367cC3563B55CBD02bB4cE4d',
   })
   @IsNotEmpty()
