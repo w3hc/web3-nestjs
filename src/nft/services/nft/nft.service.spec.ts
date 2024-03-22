@@ -53,7 +53,7 @@ describe('NftService', () => {
         network: 11155111,
         contractAddress: '',
         tokenId: 1,
-        metadata: 'hello',
+        metadata: 'metadata',
       };
 
       jest.spyOn(repository, 'create').mockReturnValue(mockCreatedNft);
