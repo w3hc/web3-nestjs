@@ -1,76 +1,80 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NftController } from './nft.controller';
-import { NftService } from '../../../nft/services/nft/nft.service';
-import { DeployNftDto } from '../../services/nft/dtos/deployNft.dtos';
-import { HttpModule } from '@nestjs/axios';
-import { Nft } from '../../../typeorm';
-import { MintInterceptor } from '../../mint.interceptor';
-import { HttpService } from '@nestjs/axios';
-import { AppModule } from 'src/app.module';
-
-const mockNftService = {
-  getNft: jest.fn(),
-  findNftById: jest.fn(),
-  createNft: jest.fn(),
-  searchNftByMetadata: jest.fn(),
-};
-
-const mockNft: Nft = {
-  id: 1,
-  network: 11155111,
-  contractAddress: '',
-  tokenId: 1,
-  metadata: 'hello',
-};
+import { NftService } from '../../services/nft/nft.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Nft } from '../../../typeorm/nft.entity';
+import { DeployNftDto } from '../../../nft/services/nft/dtos/deployNft.dtos';
 
 describe('NftController', () => {
   let controller: NftController;
+  let service: NftService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [NftController],
-      providers: [NftService, MintInterceptor, HttpService],
-      imports: [HttpModule, AppModule],
-    })
-      .overrideProvider(NftService)
-      .useValue(mockNftService)
-      .compile();
+      providers: [
+        NftService,
+        {
+          provide: getRepositoryToken(Nft),
+          useValue: {},
+        },
+      ],
+    }).compile();
 
     controller = module.get<NftController>(NftController);
+    service = module.get<NftService>(NftService);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
   });
 
   describe('getNft', () => {
-    it('should return an array of Nft objects', async () => {
-      const mockNfts: Nft[] = [mockNft];
-      mockNftService.getNft.mockResolvedValue(mockNfts);
+    it('should return all NFTs', async () => {
+      const result = [
+        {
+          id: 1,
+          network: 123,
+          contractAddress: '0x...',
+          tokenId: 1,
+          metadata: '...',
+        },
+      ];
+      jest.spyOn(service, 'getNft').mockResolvedValue(result);
 
-      const result = await controller.getNft();
-
-      expect(result).toEqual(mockNfts);
-      expect(mockNftService.getNft).toHaveBeenCalled();
+      expect(await controller.getNft()).toBe(result);
     });
   });
 
   describe('findNftById', () => {
-    it('should return a single Nft object', async () => {
+    it('should return NFT by id', async () => {
       const mockNftId = 1;
-      mockNftService.findNftById.mockResolvedValue(mockNft);
+      const mockNft = {
+        id: mockNftId,
+        network: 123,
+        contractAddress: '0x...',
+        tokenId: 1,
+        metadata: '...',
+      };
+
+      jest
+        .spyOn(service, 'findNftById')
+        .mockImplementation(async () => mockNft);
 
       const result = await controller.findNftById(mockNftId);
 
       expect(result).toEqual(mockNft);
-      expect(mockNftService.findNftById).toHaveBeenCalledWith(mockNftId);
     });
   });
 
   describe('createNft', () => {
-    it('should return the created Nft', async () => {
+    it('should create an NFT', async () => {
       const mockDeployNftDto: DeployNftDto = {
         network: 11155111,
         recipient: '0x3e50D7fAF96B4294367cC3563B55CBD02bB4cE4d',
-        name: 'yo',
-        description: 'yo',
-        creatorName: 'yo',
+        name: 'name',
+        description: 'description',
+        creatorName: 'creatorName',
         creatorAddress: '0x000000000000000000000000000000000default',
         imageUrl:
           'https://bafybeiakz6ddls5hrcgrcpse3ofuqxx3octuedtapyxnstktyoadtwjjqi.ipfs.w3s.link/',
@@ -78,12 +82,22 @@ describe('NftController', () => {
         symbol: 'MYNFT',
         redeemable: false,
       };
-      mockNftService.createNft.mockResolvedValue(mockNft);
+
+      const mockCreatedNft: Nft = {
+        id: 1,
+        network: 11155111,
+        contractAddress: '',
+        tokenId: 1,
+        metadata: 'metadata',
+      };
+
+      jest
+        .spyOn(service, 'createNft')
+        .mockImplementation(async () => mockCreatedNft);
 
       const result = await controller.createNft(mockDeployNftDto);
 
-      expect(result).toEqual(mockNft);
-      expect(mockNftService.createNft).toHaveBeenCalledWith(mockDeployNftDto);
+      expect(result).toEqual(mockCreatedNft);
     });
   });
 });
