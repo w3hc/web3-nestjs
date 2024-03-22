@@ -199,11 +199,31 @@ export class MintInterceptor implements NestInterceptor {
               new InternalServerErrorException('Something went wrong', error),
           );
         }),
-        tap(() => {
+        tap(async () => {
+          let ethPriceUSD;
+          try {
+            const response = await fetch(
+              'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
+            );
+
+            if (!response.ok) {
+              throw new Error('Failed to fetch ETH price');
+            }
+
+            const data = await response.json();
+
+            ethPriceUSD = data.ethereum.usd;
+          } catch (error) {
+            console.error('Error fetching ETH price:', error);
+            throw error;
+          }
+
           const elapsedTimeInSeconds = (Date.now() - now) / 1000;
           const deploymentCost =
             Number(signerCurrentBalance) - Number(signerBalanceAfterDeployment);
-          console.log(`\nDeployment cost = ${deploymentCost} ETH`);
+          console.log(
+            `\nDeployment cost = ${deploymentCost} ETH (${ethPriceUSD * deploymentCost} USD eq.)`,
+          );
           console.log(
             `\n///// Create done (took ${elapsedTimeInSeconds} seconds) /////\n`,
           );
